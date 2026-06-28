@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NorthLedger Login</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header>
+        <div class="brand">
+            <div class="logo-box">
+                N
+            </div>
+            <div>
+                <h1>NorthLedger</h1>
+                <p>Personal finance dashboard</p>
+            </div>
+        </div>
+    </header>
+
+    <main>
+        <section class="login-card">
+            <h2 id="login-title">Welcome back</h2>
+            <p>Log in to continue to your dashboard.</p>
+            <p>Manage your accounts, transactions, and spending limits.</p>
+
+            <form id="login-form">
+                <div>
+                    <label for="email">Email Address</label>
+                    <input type="email" name="email" id="email">
+                </div>
+
+                <div>
+                    <label for="password">Password</label>
+                    <input type="password" name="password" id="password">
+                </div>
+
+                <p id="error-message"></p>
+                <p id="success-message"></p>
+
+                <button type="submit" id="login-button">Log in</button>
+
+            </form>
+
+            <div class="signup-area">
+
+                <p>New to NorthLedger?</p>
+                <button type="button">Create an account</button>
+
+            </div>
+
+        </section>
+    </main>
+<script src="script.js"></script>
+</body>
+</html>
