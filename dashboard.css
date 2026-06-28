@@ -134,3 +134,22 @@ main{
     font-size: 28px;
     font-weight: 700;
 }
+
+@media (max-width: 700px) {
+
+    .summary-grid{
+
+        flex-direction: column;
+    }
+
+    .dashboard-top{
+
+        flex-direction: column;
+    }
+
+    #logout-button{
+
+        width: 100%;
+    }
+    
+}
