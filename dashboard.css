@@ -135,6 +135,14 @@ main{
     font-weight: 700;
 }
 
+#dashboard-message{
+
+    color: #64748b;
+    font-size: 14px;
+    font-weight: 600;
+    margin-top: 16px;
+}
+
 @media (max-width: 700px) {
 
     .summary-grid{
