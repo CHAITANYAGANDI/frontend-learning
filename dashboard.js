@@ -1,6 +1,6 @@
 const API_BASE_URL = "http://localhost:8080/api/v1";
 const DASHBOARD_SUMMARY_URL = API_BASE_URL + "/dashboard/summary";
-const ACCESS_TOKEN_KEY = "accessToken"
+const ACCESS_TOKEN_KEY = "accessToken";
 
 
 const accessToken = localStorage.getItem(ACCESS_TOKEN_KEY);
@@ -22,8 +22,6 @@ const totalBalanceValue = document.getElementById("total-balance-value");
 const currentCreditValue = document.getElementById("current-credit-value");
 const currentDebitValue = document.getElementById("current-debit-value");
 const dashboardMessage = document.getElementById("dashboard-message");
-
-
 
 
 const fakeDashboardSummary = {
@@ -59,6 +57,26 @@ function handleUnauthorizedResponse(response){
 
 }
 
+function showSampleDashboardData(){
+
+    updateDashboardSummary(fakeDashboardSummary);
+    dashboardMessage.textContent = "Server is not running. Showing sample dashboard data.";
+
+}
+
+function handleDashboardResponse(response){
+
+    if (handleUnauthorizedResponse(response)) {
+        return;
+    }
+
+    if (!response.ok) {
+        throw new Error("Failed to load dashboard summary");
+    }
+
+    return response.json();
+}
+
 function loadDashboardSummary(){
 
     dashboardMessage.textContent = "Loading dashboard summary...";
@@ -71,17 +89,7 @@ function loadDashboardSummary(){
     })
     .then((response) => {
 
-        if(handleUnauthorizedResponse(response)){
-
-            return;
-        }
-
-        if(!response.ok){
-
-            throw new Error("Failed to load dashboard summary");
-        }
-
-        return response.json();
+        return handleDashboardResponse(response);
 
     })
     .then((dashboardSummary) => {
@@ -97,9 +105,8 @@ function loadDashboardSummary(){
     })
     .catch((error) => {
 
-        updateDashboardSummary(fakeDashboardSummary);
-
-        dashboardMessage.textContent = "Server is not running. Showing sample dashboard data.";
+       
+        showSampleDashboardData();
 
         console.log("Dashboard fetch error:", error);
     });
