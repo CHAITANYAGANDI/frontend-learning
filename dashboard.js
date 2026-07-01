@@ -64,52 +64,53 @@ function showSampleDashboardData(){
 
 }
 
-function handleDashboardResponse(response){
+function handleApiResponse(response){
 
     if (handleUnauthorizedResponse(response)) {
         return;
     }
 
     if (!response.ok) {
-        throw new Error("Failed to load dashboard summary");
+        throw new Error("Failed to load data");
     }
 
     return response.json();
 }
 
-function loadDashboardSummary(){
+function apiFetch(url){
 
-    dashboardMessage.textContent = "Loading dashboard summary...";
-
-
-    fetch(DASHBOARD_SUMMARY_URL, {
+    
+    return fetch(url, {
 
     method: "GET",
     headers: AUTH_HEADERS
     })
     .then((response) => {
 
-        return handleDashboardResponse(response);
+        return handleApiResponse(response);
 
-    })
-    .then((dashboardSummary) => {
+    }); 
+}
+
+async function loadDashboardSummary(){
+
+    dashboardMessage.textContent = "Loading dashboard summary...";
+
+    try{
+
+        const dashboardSummary = await apiFetch(DASHBOARD_SUMMARY_URL);
 
         if(!dashboardSummary){
-
             return;
         }
 
         updateDashboardSummary(dashboardSummary);
-
         dashboardMessage.textContent = "";
-    })
-    .catch((error) => {
+    } catch(error){
 
-       
         showSampleDashboardData();
-
-        console.log("Dashboard fetch error:", error);
-    });
+        console.log("Dashboard fetch error: ", error);
+    }
 
 }
 
@@ -124,7 +125,7 @@ loadDashboardSummary();
 
 logoutButton.addEventListener("click", function(){
 
-    logoutUser();
+logoutUser();
 
 });
 

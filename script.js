@@ -4,35 +4,94 @@ const loginForm = document.getElementById("login-form");
 const errorMessage = document.getElementById("error-message");
 const successMessage = document.getElementById("success-message");
 
-loginForm.addEventListener("submit", function(event){
+const ACCESS_TOKEN_KEY = "accessToken";
+const API_BASE_URL = "http://localhost:8080/api/v1";
+const LOGIN_URL = API_BASE_URL + "/auth/login";
+const AUTH_HEADERS = {
 
-    event.preventDefault();
+    "Content-Type":"application/json"
+};
 
-    const email = emailInput.value.trim();
-    const password = passwordInput.value.trim();
+function manageLoginResponse(loginResponse){
+
+        localStorage.setItem(ACCESS_TOKEN_KEY,loginResponse.accessToken);
+
+        errorMessage.textContent = "";
+        successMessage.textContent = "Login Successful";
+
+        window.location.href = "dashboard.html";
+}
+
+function handleFieldValidation(email,password){
 
     if(email === "" || password === ""){
 
         errorMessage.textContent = "Please enter email and password";
         successMessage.textContent = "";
-        return;
+        return false;
     }
 
     if(!email.includes("@")){
 
         errorMessage.textContent = "Please enter a valid email address";
         successMessage.textContent = "";
-        return;
+        return false;
     }
 
     if(password.length < 6){
         errorMessage.textContent = "Password must be at least 6 characters";
         successMessage.textContent = "";
+        return false;
+    }
+
+    return true;
+
+}
+
+function handleApiResponse(response){
+
+    if(!response.ok){
+        
+        errorMessage.textContent = "Invalid email or password";
+        successMessage.textContent = "";
+        return;
+    }
+
+    return response.json();
+}
+
+function apiFetch(url,requestBody){
+
+    return fetch(url,{
+
+        method:"POST",
+        headers: AUTH_HEADERS,
+        body: requestBody
+
+    }).then((response) =>{
+
+        if(!response){
+            return;
+        }
+        return handleApiResponse(response);
+    })
+}
+
+
+loginForm.addEventListener("submit", async function(event){
+
+    event.preventDefault();
+
+    const email = emailInput.value.trim();
+    const password = passwordInput.value.trim();
+
+    if(!handleFieldValidation(email,password)){
+
         return;
     }
 
     errorMessage.textContent = "";
-    successMessage.textContent = "Login details received successfully";
+    successMessage.textContent = "Sending login request...";
 
     const loginRequest = {
 
@@ -43,44 +102,23 @@ loginForm.addEventListener("submit", function(event){
 
     const loginRequestJson = JSON.stringify(loginRequest);
 
-    fetch("http://localhost:8080/api/v1/auth/login",{
 
-        method:"POST",
-        headers:{
-            "Content-Type": "application/json"
-        },
-        body: loginRequestJson
+    try{
 
-    }).then((response)=>{
+        const loginResponseFromServer = await apiFetch(LOGIN_URL,loginRequestJson);
 
-        if(!response.ok){
-            
-            errorMessage.textContent = "Invalid email or password";
-            successMessage.textContent = "";
+        if(!loginResponseFromServer){
             return;
         }
 
-        return response.json();
+        manageLoginResponse(loginResponseFromServer);
 
-    }).then((loginResponse) => {
 
-        if(!loginResponse){
-
-            return;
-        }
-
-        localStorage.setItem("accessToken",loginResponse.accessToken);
-
-        errorMessage.textContent = "";
-        successMessage.textContent = "Login Successful";
-
-        window.location.href = "dashboard.html";
-
-    }).catch((error)=>{
+    } catch(error){
 
         errorMessage.textContent = "Unable to connect to server. Please try again later.";
         successMessage.textContent = "";
 
         console.log("Fetch error:",error);
-    });
+    };
 });
