@@ -1,9 +1,9 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "../App.css";
-import { ACCESS_TOKEN_KEY, REFRESH_TOKEN_KEY } from "../constants/auth";
 import type { LoginRequest } from "../types/auth";
 import { loginUser } from "../services/authService";
+import { saveAuthToken } from "../utils/authStorage";
 
 function LoginPage(){
 
@@ -54,8 +54,7 @@ function LoginPage(){
 
       const loginResponse = await loginUser(loginRequest);
 
-      localStorage.setItem(ACCESS_TOKEN_KEY,loginResponse.accessToken);
-      localStorage.setItem(REFRESH_TOKEN_KEY, loginResponse.refreshToken);
+      saveAuthToken(loginResponse.accessToken,loginResponse.refreshToken);
 
       setMessage("Login Successful");
 

@@ -5,10 +5,10 @@ import SummaryCard from "../components/SummaryCard";
 import type {Transaction} from "../types/transaction";
 import TransactionRow from "../components/TransactionRow";
 import type { DashboardSummary } from "../types/dashboard";
-import { ACCESS_TOKEN_KEY, REFRESH_TOKEN_KEY } from "../constants/auth";
 import { getDashboardSummary } from "../services/dashboardService";
 import { getRecentTransactions } from "../services/transactionService";
 import { formatCurrency } from "../utils/formatCurrency";
+import { clearAuthTokens, getAccessToken } from "../utils/authStorage";
 
 const sampleDashboardSummary: DashboardSummary = {
 
@@ -53,18 +53,17 @@ function DashboardPage(){
 
     function handleLogout(){
 
-        localStorage.removeItem(ACCESS_TOKEN_KEY);
-        localStorage.removeItem(REFRESH_TOKEN_KEY);
+        clearAuthTokens();
 
         navigate("/");
     }
 
     useEffect(() => {
 
-        const accessToken = localStorage.getItem(ACCESS_TOKEN_KEY);
+
+        const accessToken = getAccessToken();
 
         if(!accessToken){
-            navigate("/");
             return;
         }
 
@@ -92,7 +91,7 @@ function DashboardPage(){
 
         loadDashboardData(accessToken);
 
-    }, [navigate]);
+    }, []);
 
     return (
         <div className="app-container">
