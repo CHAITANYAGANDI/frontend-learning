@@ -1,6 +1,6 @@
 import { ACCESS_TOKEN_KEY, REFRESH_TOKEN_KEY } from "../constants/auth";
 
-export function saveAuthToken(accessToken: string, refreshToken: string): void {
+export function saveAuthTokens(accessToken: string, refreshToken: string): void {
     localStorage.setItem(ACCESS_TOKEN_KEY,accessToken);
     localStorage.setItem(REFRESH_TOKEN_KEY, refreshToken);
 }

@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import LoginPage from "./pages/LoginPage";
 import DashboardPage from "./pages/DashboardPage";
 import ProtectedRoute from "./components/ProtectedRoute";
+import NotFoundPage from "./pages/NotFoundPage";
 
 function App(){
 
@@ -14,6 +15,7 @@ function App(){
             <DashboardPage/>
           </ProtectedRoute>
         }/>
+        <Route path="*" element = {<NotFoundPage/>}/>
       </Routes>
     </BrowserRouter>
   )

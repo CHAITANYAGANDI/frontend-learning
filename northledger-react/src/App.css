@@ -44,6 +44,12 @@
   cursor: pointer;
 }
 
+.login-card button:disabled {
+
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
 .login-card input{
 
   width: 100%;

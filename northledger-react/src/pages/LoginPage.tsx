@@ -1,9 +1,10 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "../App.css";
 import type { LoginRequest } from "../types/auth";
 import { loginUser } from "../services/authService";
-import { saveAuthToken } from "../utils/authStorage";
+import { getAccessToken, saveAuthTokens } from "../utils/authStorage";
+import { validateLoginForm } from "../utils/validateLoginForm";
 
 function LoginPage(){
 
@@ -14,9 +15,19 @@ function LoginPage(){
   const [message, setMessage] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
 
   const navigate = useNavigate();
 
+  useEffect(()=>{
+
+    const accessToken = getAccessToken();
+
+    if(accessToken){
+      navigate("/dashboard");
+    }
+
+  },[navigate]);
 
 
   async function handleLoginSubmit(event: React.FormEvent<HTMLFormElement>){
@@ -24,20 +35,11 @@ function LoginPage(){
     
     event.preventDefault();
 
-    if(email.trim() === "" || password.trim() === ""){
+    const validationMessage = validateLoginForm(email,password);
 
-      setMessage("Please enter email and password");
-      return;
-    }
+    if(validationMessage !== ""){
 
-    if(!email.includes("@")){
-
-      setMessage("Please enter a valid email address");
-      return;
-    }
-
-    if(password.length<6){
-      setMessage("Password must be at least 6 characters");
+      setMessage(validationMessage);
       return;
     }
 
@@ -50,11 +52,13 @@ function LoginPage(){
 
     try{
 
+      setIsLoading(true);
+
       setMessage("Sending login request...");
 
       const loginResponse = await loginUser(loginRequest);
 
-      saveAuthToken(loginResponse.accessToken,loginResponse.refreshToken);
+      saveAuthTokens(loginResponse.accessToken,loginResponse.refreshToken);
 
       setMessage("Login Successful");
 
@@ -70,7 +74,11 @@ function LoginPage(){
         return;
       }
 
-      setMessage("Unable to connect to server")
+      setMessage("Unable to connect to server");
+
+    } finally {
+
+      setIsLoading(false);
     }
 
   }
@@ -98,7 +106,9 @@ function LoginPage(){
                   setPassword(event.target.value)
                 }} />
 
-          <button type="submit">{buttonText}</button>
+          <button type="submit" disabled={isLoading}>
+            {isLoading ? "Logging in..." : buttonText}
+          </button>
 
         </form>
 
