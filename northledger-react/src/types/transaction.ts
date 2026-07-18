@@ -2,8 +2,12 @@ export type TransactionType = "CREDIT" | "DEBIT" | "TRANSFER";
 
 export type Transaction = {
     id: number;
-    title: string;
+    transactionType: TransactionType;
+    accountId?: number;
+    categoryId?: number;
+    fromAccountId?: number;
+    toAccountId?: number;
     amount: number;
-    type: TransactionType;
-    date: string;
+    description: string;
+    transactionDate: string;
 };
