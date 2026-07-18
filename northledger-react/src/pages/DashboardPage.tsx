@@ -1,11 +1,10 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { currentMonth, currentYear, sampleAccounts,sampleBudgets,sampleCategories, sampleRecurringExpenses, sampleTransactions } from "../data/sampleNorthLedgerData";
-import type { RecurringExpense } from "../types/recurring";
+import { currentMonth, currentYear, sampleAccounts,sampleBudgets,sampleCategories, sampleTransactions } from "../data/sampleNorthLedgerData";
 import { clearAuthTokens } from "../utils/authStorage";
 import type { Account } from "../types/account";
 import type { Category } from "../types/category";
-import type { Transaction,TransactionType } from "../types/transaction";
+import type { Transaction } from "../types/transaction";
 import type { Budget } from "../types/budget";
 import type { AppPage } from "../types/page";
 import "../App.css";
@@ -25,21 +24,17 @@ const monthNames = [
     "December"
 ];
 
-type TransactionFilter = "ALL" | TransactionType;
-
 function DashboardPage() {
 
     const navigate = useNavigate();
 
     const [activePage, setActivePage] = useState<AppPage>("dashboard");
-    const [transactionFilter, setTransactionFilter] = useState<TransactionFilter>("ALL");
 
     const [accounts] = useState<Account[]>(sampleAccounts);
     const [categories] = useState<Category[]>(sampleCategories);
     const [transactions] = useState<Transaction[]>(sampleTransactions);
     const [budgets] = useState<Budget[]>(sampleBudgets);
-    const [recurringExpenses] = useState<RecurringExpense[]>(sampleRecurringExpenses);
-
+    
     function handleLogout(){
 
         clearAuthTokens();
