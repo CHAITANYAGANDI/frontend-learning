@@ -551,3 +551,66 @@ h1 {
     font-size: 13px;
     padding: 10px 0;
 }
+
+
+.cards-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px;
+}
+
+.account-card {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-lg);
+    padding: 18px;
+    box-shadow: 0 1px 0 rgba(0, 0, 0, 0.03);
+}
+
+.account-head {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 15px;
+}
+
+.bank-mark {
+    width: 42px;
+    height: 42px;
+    border-radius: 14px;
+    display: grid;
+    place-items: center;
+    background: var(--surface-soft);
+    font-weight: 900;
+}
+
+.tag {
+    display: inline-flex;
+    align-items: center;
+    border: 1px solid var(--line);
+    background: var(--surface-soft);
+    border-radius: 999px;
+    padding: 5px 9px;
+    font-size: 11px;
+    font-weight: 900;
+    color: var(--muted);
+    height: fit-content;
+}
+
+.account-name {
+    font-size: 15px;
+    font-weight: 900;
+}
+
+.account-number {
+    margin-top: 3px;
+    color: var(--muted);
+    font-size: 12px;
+}
+
+.account-balance {
+    margin-top: 9px;
+    font-size: 28px;
+    font-weight: 920;
+    letter-spacing: -0.055em;
+}

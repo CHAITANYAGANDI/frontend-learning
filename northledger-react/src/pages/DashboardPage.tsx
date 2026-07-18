@@ -280,6 +280,34 @@ function DashboardPage() {
         );
     }
 
+    function renderAccountCard(account: Account){
+        
+        const accountId = account.id;
+        const bankName = account.bankName.slice(0,2).toUpperCase();
+        const accountType = account.accountType === "CHEQUING" ? "Chequing" : "Savings";
+        const accountNumber: string = account.accountNumber.toString();
+        const accountBalance = money(account.balance);
+
+        return (
+            <div className="account-card" key={accountId}>
+                <div className="account-head">
+                    <div className="bank-mark">
+                        {bankName}
+                    </div>
+                    <span className="tag">{accountType}</span>
+                </div>
+                <div className="account-name">
+                    {getAccountName(accountId)}
+                </div>
+                <div className="account-number">
+                    {"Account "+accountNumber}
+                </div>
+                <div className="account-balance">{accountBalance}</div>
+            </div>
+        );
+    }
+
+
     const monthlyIncome = currentMonthlyIncome();
     const monthlyExpenses = currentMontlyExpenses();
     const monthlySavings = monthlyIncome - monthlyExpenses;
@@ -475,6 +503,17 @@ function DashboardPage() {
                                 </div>
                             </div>    
                         </div>  
+                    </section>
+                )}
+                {activePage === "accounts" && (
+                    <section className="page active">
+                        <div className="topbar">
+                            <h1>Account Details</h1>
+                            <button className="btn primary">Add account</button>
+                        </div>
+                        <div className="cards-grid">
+                            {accounts.map(renderAccountCard)}
+                        </div>
                     </section>
                 )}
             </main>
