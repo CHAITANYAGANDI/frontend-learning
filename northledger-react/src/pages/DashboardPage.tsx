@@ -171,10 +171,10 @@ function DashboardPage() {
 
         if(transaction.transactionType === "TRANSFER") {
 
-            return `${getAccountName(transaction.fromAccountId)} tp ${getAccountName(transaction.toAccountId)}`;
+            return `${getAccountName(transaction.fromAccountId)} to ${getAccountName(transaction.toAccountId)}`;
         }
 
-        return `${getCategoryName(transaction.categoryId)} . ${getAccountName(transaction.accountId)}`;
+        return `${getCategoryName(transaction.categoryId)} · ${getAccountName(transaction.accountId)}`;
     }
 
     function getTransactionAmountClass(transaction: Transaction): string {
@@ -216,10 +216,11 @@ function DashboardPage() {
                 </div>
                 <div className={"row-amount " + getTransactionAmountClass(transaction)}>
                     {getTransactionAmountLabel(transaction)}
+                    <div className="row-date">
+                        {dateLabel(transaction.transactionDate)}
+                    </div>
                 </div>
-                <div className="row-date">
-                    {dateLabel(transaction.transactionDate)}
-                </div>
+                
             </div>
         );
     }
@@ -230,7 +231,7 @@ function DashboardPage() {
                 return (
 
                     transaction.transactionType === "DEBIT" &&
-                    transactionFilter.categoryId === categoryId &&
+                    transaction.categoryId === categoryId &&
                     inCurrentMonth(transaction)
                 );
             })
@@ -276,8 +277,10 @@ function DashboardPage() {
 
                     </div>
 
-                    <span className={statusClassName}>{status}</span>
                 </div>
+                
+                <span className={statusClassName}>{status}</span>
+
             </div>
         );
     }
@@ -392,89 +395,91 @@ function DashboardPage() {
                                 </div>
                             </div>
                         </div>
-                        <div className="panel">
-                            <div className="panel-header">
-                                <div>
-                                    <h2>
-                                        Your Top Spending Categories
-                                    </h2>
+                        <div className="dashboard-grid">
+                            <div>
+                                <div className="panel">
+                                    <div className="panel-header">
+                                        <div>
+                                            <h2>
+                                                Your Top Spending Categories
+                                            </h2>
+                                        </div>
+                                    </div>
+                                
+                                    <div className="spending-card">
+                                        <div className="ring">
+                                            <div className="ring-text">
+                                                <strong>{money(totalSpending).replace(".00","")}</strong>
+                                                <span>spent</span>
+                                            </div>
+                                        </div>
+                                        <div className="legend-list">
+                                            {spendingByCategory.length === 0 &&  (
+                                                <div className="helper">No spending this month</div>
+                                            )}
+
+                                            {spendingByCategory.map((item,index) => {
+
+                                                const percent =
+                                                    totalSpending > 0
+                                                        ? Math.round((item.amount / totalSpending) * 100)
+                                                        : 0;
+
+                                                return(
+
+                                                    <div className="legend-row" key = {item.categoryName}>
+                                                        <div className="legend-title">
+                                                            <span className={"swatch swatch-" + index}/>
+                                                            {item.categoryName}
+                                                        </div>
+
+                                                        <div className="legend-value">
+                                                            {money(item.amount)}
+                                                            <small>{percent}%</small>
+                                                        </div>
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                    </div>
                                 </div>
-                            </div>
-                            
-                            <div className="spending-card">
-                                <div className="ring">
-                                    <div className="ring-text">
-                                        <strong>{money(totalSpending).replace(".00","")}</strong>
-                                        <span>spent</span>
+                                <div className="panel">
+                                    <div className="panel-header">
+                                        <div>
+                                            <h2>Recent activity</h2>
+                                        </div>
+                                        <button className="btn subtle"
+                                        onClick={()=>{
+                                            setActivePage("transactions")
+                                        }}>
+                                            View all
+                                        </button>
+                                    </div>
+                                    <div className="rows">
+                                        {transactions.slice(0,5).map(renderTransactionRow)}
                                     </div>
                                 </div>
                             </div>
+                            <div className="panel">
 
-                            <div className="legend-list">
-                                {spendingByCategory.length === 0 &&  (
-                                    <div className="helper">No spending this month</div>
-                                )}
-
-                                {spendingByCategory.map((item,index) => {
-
-                                    const percent =
-                                        totalSpending > 0
-                                            ? Math.round((item.amount / totalSpending) * 100)
-                                            : 0;
-
-                                    return(
-
-                                        <div className="legend-row" key = {item.categoryName}>
-                                            <div className="legend-title">
-                                                <span className={"swatch swatch-" + index}/>
-                                                {item.categoryName}
-                                            </div>
-
-                                            <div className="legend-value">
-                                                {money(item.amount)}
-                                                <small>{percent}%</small>
-                                            </div>
-                                        </div>
-                                    );
-                                })}
-                            </div>
-                        </div>
-                        <div className="panel">
-                            <div className="panel-header">
-                                <div>
-                                    <h2>Recent activity</h2>
+                                <div className="panel-header">
+                                    <div>
+                                        <h2>
+                                            Your Budget Progress
+                                        </h2>
+                                    </div>
                                 </div>
-                                <button className="btn subtle"
-                                onClick={()=>{
-                                    setActivePage("transactions")
-                                }}>
-                                    View all
-                                </button>
-                            </div>
-                            <div className="rows">
-                                {transactions.slice(0,5).map(renderTransactionRow)}
-                            </div>
-                        </div>
-
-                        <div className="panel">
-
-                            <div className="panel-header">
-                                <div>
-                                    <h2>
-                                        Your Budget Progress
-                                    </h2>
-                                </div>
-                            </div>
                             
-                            <div className="progress-list">
-                                {budgets.length === 0 && (
-                                    <div className="helper">No plans for this month.</div>
+                                <div className="progress-list">
+                                    {budgets.length === 0 && (
+                                        <div className="helper">No plans for this month.</div>
 
-                                )}
+                                    )}
 
-                                {budgets.map(renderBudgetProgress)}
-                            </div>
-                        </div>
+                                    {budgets.map(renderBudgetProgress)}
+                                </div>
+                            </div>    
+                        </div>  
                     </section>
                 )}
             </main>
