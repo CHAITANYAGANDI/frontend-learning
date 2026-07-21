@@ -1,10 +1,10 @@
-import { useState } from "react";
+import { useState, type FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import { currentMonth, currentYear, sampleAccounts,sampleBudgets,sampleCategories, sampleTransactions } from "../data/sampleNorthLedgerData";
 import { clearAuthTokens } from "../utils/authStorage";
 import type { Account } from "../types/account";
 import type { Category } from "../types/category";
-import type { Transaction } from "../types/transaction";
+import type { Transaction, TransactionType } from "../types/transaction";
 import type { Budget } from "../types/budget";
 import type { AppPage } from "../types/page";
 import "../App.css";
@@ -15,7 +15,9 @@ const monthNames = [
     "March",
     "April",
     "May",
-    "June",
+    "June"
+    
+    ,
     "July",
     "August",
     "September",
@@ -24,21 +26,71 @@ const monthNames = [
     "December"
 ];
 
+type TransactionFilter = "ALL" | TransactionType;
+type ActiveModal = null | "account" | "transaction";
+
 function DashboardPage() {
 
     const navigate = useNavigate();
 
     const [activePage, setActivePage] = useState<AppPage>("dashboard");
 
-    const [accounts] = useState<Account[]>(sampleAccounts);
+    const [accounts, setAccounts] = useState<Account[]>(sampleAccounts);
     const [categories] = useState<Category[]>(sampleCategories);
-    const [transactions] = useState<Transaction[]>(sampleTransactions);
+    const [transactions, setTransactions] = useState<Transaction[]>(sampleTransactions);
     const [budgets] = useState<Budget[]>(sampleBudgets);
+    const [transactionFilter, setTransactionFilter] = useState<TransactionFilter>("ALL");
+    const [activeModal, setActiveModal] = useState<ActiveModal>(null);
+    const [newAccountBankName, setNewAccountBankName] = useState<string>("");
+    const [newAccountType, setNewAccountType] = useState<Account["accountType"]>("CHEQUING");
+    const [newTransactionType, setNewTransactionType] = useState<"DEBIT" | "CREDIT">("DEBIT");
+    const [newTransactionAccountId, setNewTransactionAccountId] = useState<number>(accounts[0]?.id ?? 0);
+    const [newTransactionCategoryId, setNewTransactionCategoryId] = useState<number>(categories[0]?.id ?? 0);
+    const [newTransactionAmount, setNewTransactionAmount] = useState<string>("");
+    const [newTransactionDescription, setNewTransactionDescription] = useState<string>("");
+    const [newTransactionDate, setNewTransactionDate] = useState<string>(new Date().toISOString().slice(0,10));
+
+
+
     
     function handleLogout(){
 
         clearAuthTokens();
         navigate("/");
+    }
+
+    function closeModal(){
+
+        setActiveModal(null);
+        setNewAccountBankName("");
+        setNewAccountType("CHEQUING");
+    }
+
+    function handleAddAccount(event: FormEvent<HTMLFormElement>){
+
+        event.preventDefault();
+
+        const trimmedBankName = newAccountBankName.trim();
+
+        if(!trimmedBankName) {
+            return;
+        }
+
+        const newAccount: Account = {
+
+            id: Date.now(),
+            bankName: trimmedBankName,
+            accountType: newAccountType,
+            accountNumber: Number(String(Date.now()).slice(-10)),
+            balance: 0
+        };
+
+        setAccounts((currentAccounts) => {
+            
+            return [...currentAccounts, newAccount];
+        });
+
+        closeModal();
     }
 
     function money(amount: number): string {
@@ -315,8 +367,25 @@ function DashboardPage() {
     const spendingByCategory = getSpendingByCategory();
     const totalSpending = monthlyExpenses;
 
+    const filteredTransactions = transactionFilter === "ALL" 
+                                    ? transactions 
+                                    : transactions.filter((transaction)=>{
+
+                                        return transaction.transactionType === transactionFilter;
+                                    });
+
+
+    const availableTransactionCategories = categories.filter((category) => {
+
+        if(newTransactionType === "DEBIT") {
+            return category.categoryType === "EXPENSE";
+        }
+
+        return category.categoryType === "INCOME";
+    })
+
     return (
-        <div className="app">
+        <div className="dashboard-app">
             <aside className="sidebar">
                 <div className="brand">
                     <div className="mark">
@@ -509,14 +578,232 @@ function DashboardPage() {
                     <section className="page active">
                         <div className="topbar">
                             <h1>Account Details</h1>
-                            <button className="btn primary">Add account</button>
+                            <button 
+                                className="btn primary" 
+                                onClick={()=>{setActiveModal("account")}}
+                                >Add account</button>
                         </div>
                         <div className="cards-grid">
                             {accounts.map(renderAccountCard)}
                         </div>
                     </section>
                 )}
+                {activePage === "transactions" &&(
+
+                    <section className="page active">
+                        <div className="topbar">
+                            <div>
+                                <h1>Transactions</h1>
+                                <p className="subtitle">Review every credit, debit, and transfer</p>
+                            </div>
+                            
+                            <button className="btn primary"
+                            onClick={()=>{setActiveModal("transaction")}}>Add transaction</button>
+                        </div>
+
+                        <div className="filter-row">
+                            <button className={transactionFilter === "ALL" ? "filter active" : "filter"} 
+                                    onClick={()=>{setTransactionFilter("ALL")}}>All</button>
+                            <button className={transactionFilter === "CREDIT" ? "filter active" : "filter"}
+                                    onClick={()=>{setTransactionFilter("CREDIT")}}>Credit</button>
+                            <button className={transactionFilter === "DEBIT" ? "filter active" : "filter"}
+                                    onClick={()=>{setTransactionFilter("DEBIT")}}>Debit</button>
+                            <button className={transactionFilter === "TRANSFER" ? "filter active" : "filter"}
+                                    onClick={()=>{setTransactionFilter("TRANSFER")}}>Transfers</button>
+                        </div>
+
+                        <div className="panel">
+                            <div className="rows">
+                                {filteredTransactions.map(renderTransactionRow)}
+                            </div>
+                        </div>
+
+                    </section>
+                )}
             </main>
+            {activeModal === "account" && (
+
+                <div className="modal-backdrop">
+                    <form className="modal" onSubmit={handleAddAccount}>
+
+                        <div className="modal-head">
+                            <h2>Add account</h2>
+                            <button type="button"
+                            className="btn subtle"
+                            onClick={closeModal}>
+                                ×
+                            </button>
+                        </div>
+
+                        <div className="modal-body form-grid">
+                            <div className="form-group">
+                                <label htmlFor="bankName">Bank name</label>
+                                <input 
+                                id="bankName" 
+                                type="text"
+                                value={newAccountBankName}
+                                onChange={(event) => {
+                                    setNewAccountBankName(event.target.value);
+                                }}
+                                autoFocus />
+                            </div>
+
+                            <div className="form-group">
+                                <label htmlFor="accountType">Account Type</label>
+                                <select 
+                                    id="accountType"
+                                    value={newAccountType}
+                                    onChange={(event) => {
+                                        setNewAccountType(event.target.value as Account["accountType"]);
+                                    }}
+                                    >
+                                        <option value="CHEQUING">Chequing</option>
+                                        <option value="SAVINGS">Savings</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div className="modal-actions">
+                            <button
+                            type="button"
+                            className="btn subtle"
+                            onClick={closeModal}>
+                                Cancel
+                            </button>
+
+                            <button  type="submit" className="btn primary">
+                                Save account
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            )}
+
+            {activeModal === "transaction" && (
+                <div className="modal-backdrop">
+                    <form className="modal">
+                        <div className="modal-head">
+                            <h2>Add transaction</h2>
+                            <button
+                            type="button"
+                            className="btn subtle"
+                            onClick={closeModal}
+                            >
+                                ×
+                            </button>
+                        </div>
+
+                        <div className="modal-body form-grid">
+
+                            <div className="form-group">
+                                <label htmlFor="transactionType">Type</label>
+                                <select 
+                                id="transactionType"
+                                value={newTransactionType}
+                                onChange={(event) => {
+                                    const selectedType = event.target.value as "DEBIT" | "CREDIT";
+
+                                    setNewTransactionType(selectedType);
+
+                                    const firstMatchingCategory = categories.find((category) => {
+
+                                        if( selectedType === "DEBIT") {
+
+                                            return category.categoryType === "EXPENSE";
+                                        }
+
+                                        return category.categoryType === "INCOME";
+                                    });
+
+                                    if(firstMatchingCategory){
+                                        setNewTransactionCategoryId(firstMatchingCategory.id);
+                                    }
+                                }}>
+                                    <option value="DEBIT">Debit</option>
+                                    <option value="CREDIT">Credit</option>
+                                    {/* <option value="TRANSFER">Transfer</option> */}
+                                </select>
+                            </div>
+
+                            <div className="form-group">
+                                <label htmlFor="account">ACCOUNT</label>
+                                <select id="account"
+                                value={newTransactionAccountId}
+                                onChange={(event) => {
+                                    setNewTransactionAccountId(Number(event.target.value))
+                                }}>{accounts.map((account)=>{
+
+                                    return (
+                                        <option key = {account.id} value={account.id}>{getAccountName(account.id)}</option>
+                                    )
+                                })}</select>
+
+                            </div>
+
+                            <div className="form-group">
+                                <label htmlFor="amount">AMOUNT</label>
+                                <input 
+                                id="amount" 
+                                type="text" 
+                                value={newTransactionAmount}
+                                onChange={(event) => {
+                                    setNewTransactionAmount(event.target.value)
+                                }}
+                                />
+                            </div>
+
+                            <div className="form-group">
+                                <label htmlFor="category">CATEGORY</label>
+                                <select id="category"
+                                value={newTransactionCategoryId}
+                                onChange={(event) => {
+                                    setNewTransactionCategoryId(Number(event.target.value))
+                                }}>{availableTransactionCategories
+                                        .map((category) => {
+                                            return(
+                                                <option 
+                                                key = {category.id} 
+                                                value={category.id}>{category.categoryName}</option>
+                                            );
+                                        })}</select>
+                            </div>
+
+                            <div className="form-group">
+                                <label htmlFor="date">DATE</label>
+                                <input 
+                                id = "date"
+                                type="date"
+                                value={newTransactionDate}
+                                onChange={(event) => {
+                                    setNewTransactionDate(event.target.value)
+                                }} />
+                            </div>
+
+                            <div className="form-group full">
+                                <label htmlFor="note">NOTE</label>
+                                <input 
+                                id = "note"
+                                type="text"
+                                value={newTransactionDescription}
+                                onChange={(event) => {
+                                    setNewTransactionDescription(event.target.value)
+                                }}
+                                autoFocus/>
+                            </div>
+                        </div>
+
+                        <div className="modal-actions">
+
+                            <button type="button"
+                            className="btn subtle"
+                            onClick={closeModal}
+                            > Cancel</button>
+
+                            <button type="submit" className="btn primary"> Save transaction</button>
+
+                        </div>
+                    </form>
+                </div>
+            )}
         </div>
     );
 

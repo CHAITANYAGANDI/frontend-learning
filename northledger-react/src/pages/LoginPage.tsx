@@ -95,14 +95,14 @@ function LoginPage(){
           <input type="email" 
                 placeholder="Enter your email" 
                 value={email} 
-                onChange={function(event){
+                onChange={(event) =>{
                   setEmail(event.target.value)
                 }}/>
 
           <input type="password"
                 placeholder="Enter your password"
                 value={password}
-                onChange={function(event){
+                onChange={(event) =>{
                   setPassword(event.target.value)
                 }} />
 
