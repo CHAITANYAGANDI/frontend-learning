@@ -62,8 +62,11 @@ function DashboardPage() {
     function closeModal(){
 
         setActiveModal(null);
+
         setNewAccountBankName("");
         setNewAccountType("CHEQUING");
+
+        resetTransactionForm();
     }
 
     function handleAddAccount(event: FormEvent<HTMLFormElement>){
@@ -76,16 +79,24 @@ function DashboardPage() {
             return;
         }
 
-        const newAccount: Account = {
 
-            id: Date.now(),
-            bankName: trimmedBankName,
-            accountType: newAccountType,
-            accountNumber: Number(String(Date.now()).slice(-10)),
-            balance: 0
-        };
 
         setAccounts((currentAccounts) => {
+
+            const nextAccountId = 
+                currentAccounts.length === 0
+                ? 1
+                : Math.max(...currentAccounts.map((account) => account.id)) + 1;
+
+
+            const newAccount: Account = {
+
+                id: nextAccountId,
+                bankName: trimmedBankName,
+                accountType: newAccountType,
+                accountNumber: 1000000000 + nextAccountId,
+                balance: 0
+            };
             
             return [...currentAccounts, newAccount];
         });
@@ -357,6 +368,96 @@ function DashboardPage() {
                 <div className="account-balance">{accountBalance}</div>
             </div>
         );
+    }
+
+    function resetTransactionForm(){
+
+        setNewTransactionType("DEBIT");
+        setNewTransactionAccountId(accounts[0]?.id ?? 0);
+
+        const firstExpenseCategory = categories.find((category)=> {
+
+            return category.categoryType === "EXPENSE";
+        });
+
+        setNewTransactionCategoryId(firstExpenseCategory?.id ?? 0);
+        setNewTransactionAmount("");
+        setNewTransactionDescription("");
+        setNewTransactionDate(new Date().toISOString().slice(0,10));
+    }
+
+
+
+    function handleAddTransaction(event: FormEvent<HTMLFormElement>) {
+
+        event.preventDefault();
+
+        const amount = Number(newTransactionAmount);
+        const trimmedDescription = newTransactionDescription.trim();
+
+        if(!newTransactionAccountId){
+
+            alert("Please select an account.");
+            return;
+        }
+
+        if(!newTransactionCategoryId) {
+
+            alert("Please select a category.")
+        }
+
+        if(Number.isNaN(amount) || amount <=0){
+
+            alert("Please enter a valid amount.");
+            return;
+        }
+
+        if(!trimmedDescription){
+
+            alert("Please enter a note.");
+            return;
+        }
+
+        const newTransaction: Transaction = {
+
+            id: Date.now(),
+            transactionType: newTransactionType,
+            accountId: newTransactionAccountId,
+            categoryId: newTransactionCategoryId,
+            amount: amount,
+            description: trimmedDescription,
+            transactionDate: newTransactionDate
+        };
+
+        setTransactions((currentTransactions) => {
+
+            return [newTransaction, ...currentTransactions];
+        });
+
+        setAccounts((currentAccounts) => {
+
+            return currentAccounts.map((account) => {
+                if(account.id !== newTransactionAccountId) {
+
+                    return account;
+                }
+
+                const updatedBalance = 
+                    
+                    newTransactionType === "CREDIT"
+                        ? account.balance + amount
+                        : account.balance - amount;
+
+                return {
+                    ...account,
+                    balance: updatedBalance
+                };
+            });
+        });
+
+        resetTransactionForm();
+        setTransactionFilter("ALL");
+        closeModal();
     }
 
 
@@ -680,7 +781,7 @@ function DashboardPage() {
 
             {activeModal === "transaction" && (
                 <div className="modal-backdrop">
-                    <form className="modal">
+                    <form className="modal" onSubmit={handleAddTransaction}>
                         <div className="modal-head">
                             <h2>Add transaction</h2>
                             <button
