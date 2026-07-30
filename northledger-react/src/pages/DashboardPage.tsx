@@ -721,6 +721,30 @@ function DashboardPage() {
 
                     </section>
                 )}
+
+                {activePage === "budgets" && (
+                    <section className="page active">
+                        <div className="topbar">
+                            <div>
+                                <h1>Spending limits</h1>
+                                <p className="subtitle">Monthly category limits for {periodText()}</p>
+                            </div>
+                            <button className="btn primary">
+                                Add limit
+                            </button>
+                        </div>
+                        <div className="panel">
+                            <div className="progress-list">
+                                {budgets.length === 0 && (
+                                    <div className="helper">No plans for this month.</div>
+
+                                )}
+
+                                {budgets.map(renderBudgetProgress)}
+                            </div>
+                        </div>
+                    </section>
+                )}
             </main>
             {activeModal === "account" && (
 
