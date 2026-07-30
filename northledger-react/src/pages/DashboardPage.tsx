@@ -27,7 +27,7 @@ const monthNames = [
 ];
 
 type TransactionFilter = "ALL" | TransactionType;
-type ActiveModal = null | "account" | "transaction";
+type ActiveModal = null | "account" | "transaction" | "budget";
 
 function DashboardPage() {
 
@@ -38,19 +38,29 @@ function DashboardPage() {
     const [accounts, setAccounts] = useState<Account[]>(sampleAccounts);
     const [categories] = useState<Category[]>(sampleCategories);
     const [transactions, setTransactions] = useState<Transaction[]>(sampleTransactions);
-    const [budgets] = useState<Budget[]>(sampleBudgets);
+    const [budgets, setBudgets] = useState<Budget[]>(sampleBudgets);
     const [transactionFilter, setTransactionFilter] = useState<TransactionFilter>("ALL");
     const [activeModal, setActiveModal] = useState<ActiveModal>(null);
     const [newAccountBankName, setNewAccountBankName] = useState<string>("");
     const [newAccountType, setNewAccountType] = useState<Account["accountType"]>("CHEQUING");
     const [newTransactionType, setNewTransactionType] = useState<"DEBIT" | "CREDIT">("DEBIT");
     const [newTransactionAccountId, setNewTransactionAccountId] = useState<number>(accounts[0]?.id ?? 0);
-    const [newTransactionCategoryId, setNewTransactionCategoryId] = useState<number>(categories[0]?.id ?? 0);
     const [newTransactionAmount, setNewTransactionAmount] = useState<string>("");
     const [newTransactionDescription, setNewTransactionDescription] = useState<string>("");
     const [newTransactionDate, setNewTransactionDate] = useState<string>(new Date().toISOString().slice(0,10));
+    const [newBudgetLimit, setNewBudgetLimit] = useState<string>("");
 
 
+    const expenseCategories = categories.filter((category) => {
+
+        return category.categoryType === "EXPENSE";
+    });
+
+    const firstExpenseCategory = expenseCategories[0];
+
+    const [newTransactionCategoryId, setNewTransactionCategoryId] = useState<number>(firstExpenseCategory?.id ?? 0);
+
+    const [newBudgetCategoryId, setNewBudgetCategoryId] = useState<number>(firstExpenseCategory?.id ?? 0);
 
     
     function handleLogout(){
@@ -374,12 +384,6 @@ function DashboardPage() {
 
         setNewTransactionType("DEBIT");
         setNewTransactionAccountId(accounts[0]?.id ?? 0);
-
-        const firstExpenseCategory = categories.find((category)=> {
-
-            return category.categoryType === "EXPENSE";
-        });
-
         setNewTransactionCategoryId(firstExpenseCategory?.id ?? 0);
         setNewTransactionAmount("");
         setNewTransactionDescription("");
@@ -404,6 +408,7 @@ function DashboardPage() {
         if(!newTransactionCategoryId) {
 
             alert("Please select a category.")
+            return;
         }
 
         if(Number.isNaN(amount) || amount <=0){
@@ -483,7 +488,7 @@ function DashboardPage() {
         }
 
         return category.categoryType === "INCOME";
-    })
+    });
 
     return (
         <div className="dashboard-app">
@@ -729,7 +734,10 @@ function DashboardPage() {
                                 <h1>Spending limits</h1>
                                 <p className="subtitle">Monthly category limits for {periodText()}</p>
                             </div>
-                            <button className="btn primary">
+                            <button className="btn primary"
+                            onClick={() => {
+                                setActiveModal("budget");
+                            }}>
                                 Add limit
                             </button>
                         </div>
@@ -928,6 +936,59 @@ function DashboardPage() {
                         </div>
                     </form>
                 </div>
+            )}
+
+            {activeModal === "budget" && (
+                <div className="modal-backdrop">
+                    <form className="modal">
+                        <div className="modal-head">
+                            <h2>Add spending limit</h2>
+                            <button type="button" 
+                            className="btn subtle" 
+                            onClick={closeModal}>×</button>
+                        </div>
+
+                        <div className="modal-body">
+                            <div className="form-group">
+                                <label htmlFor="category">CATEGORY</label>
+                                <select name="" 
+                                    id="category" 
+                                    value={newBudgetCategoryId} 
+                                    onChange={(event) => {
+                                        setNewBudgetCategoryId(Number(event.target.value))
+                                    }}>
+
+                                        {expenseCategories.map((category) => {
+
+                                            return(<option 
+                                            key={category.id} 
+                                            value={category.id}>
+                                                {category.categoryName}
+                                            </option>);
+                                        })}
+                                    </select>
+                            </div>
+
+                            <div className="form-group">
+                                <label htmlFor="limit">LIMIT</label>
+                                <input 
+                                    type="number" 
+                                    id="limit" 
+                                    value={newBudgetLimit}
+                                    onChange={(event) => {
+                                        setNewBudgetLimit(event.target.value)
+                                    }}/>
+                            </div>
+                        </div>
+
+                        <div className="modal-actions">
+                            <button type="button" className="btn subtle" onClick={closeModal}>Cancel</button>
+                            <button type= "submit" className="btn primary">Save limit</button>
+                        </div>
+                    </form>
+
+                </div>
+                
             )}
         </div>
     );
