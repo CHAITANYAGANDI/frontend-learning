@@ -77,6 +77,7 @@ function DashboardPage() {
         setNewAccountType("CHEQUING");
 
         resetTransactionForm();
+        resetBudgetForm();
     }
 
     function handleAddAccount(event: FormEvent<HTMLFormElement>){
@@ -390,6 +391,12 @@ function DashboardPage() {
         setNewTransactionDate(new Date().toISOString().slice(0,10));
     }
 
+    function resetBudgetForm(){
+
+        setNewBudgetCategoryId(firstExpenseCategory?.id ?? 0);
+        setNewBudgetLimit("");
+
+    }
 
 
     function handleAddTransaction(event: FormEvent<HTMLFormElement>) {
@@ -462,6 +469,73 @@ function DashboardPage() {
 
         resetTransactionForm();
         setTransactionFilter("ALL");
+        closeModal();
+    }
+
+    function handleAddBudget(event: FormEvent<HTMLFormElement>) {
+
+        event.preventDefault();
+
+        const monthlyLimit = Number(newBudgetLimit);
+
+        if(!newBudgetCategoryId){
+
+            alert("Please select a category.");
+            return;
+        }
+
+        if(Number.isNaN(monthlyLimit) || monthlyLimit <=0){
+            alert("Please enter a valid monthly limit.");
+            return;
+        }
+
+        setBudgets((currentBudgets) => {
+
+            const existingBudget = currentBudgets.find((budget) => {
+
+                return (
+
+                    budget.categoryId === newBudgetCategoryId &&
+                    budget.month === currentMonth &&
+                    budget.year === currentYear
+                );
+            });
+
+            if(existingBudget) {
+
+                return currentBudgets.map((budget) => {
+
+                    if(budget.id !== existingBudget.id){
+
+                        return budget;
+                    }
+
+                    return {
+                        ...budget,
+                        monthlyLimit: monthlyLimit
+                    };
+                });
+            }
+
+            const nextBudgetId = 
+                currentBudgets.length === 0
+                    ? 1
+                    : Math.max(...currentBudgets.map((budget) => budget.id)) + 1;
+
+            
+            const newBudget: Budget = {
+
+                id: nextBudgetId,
+                categoryId: newBudgetCategoryId,
+                monthlyLimit: monthlyLimit,
+                month: currentMonth,
+                year: currentYear
+            };
+
+            return [...currentBudgets, newBudget];
+
+        });
+
         closeModal();
     }
 
@@ -940,7 +1014,7 @@ function DashboardPage() {
 
             {activeModal === "budget" && (
                 <div className="modal-backdrop">
-                    <form className="modal">
+                    <form className="modal" onSubmit={handleAddBudget}>
                         <div className="modal-head">
                             <h2>Add spending limit</h2>
                             <button type="button" 
