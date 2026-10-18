@@ -1,11 +1,20 @@
 import { useState, type FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
-import { currentMonth, currentYear, sampleAccounts,sampleBudgets,sampleCategories, sampleTransactions } from "../data/sampleNorthLedgerData";
+import { 
+    currentMonth, 
+    currentYear, 
+    sampleAccounts,
+    sampleBudgets,
+    sampleCategories, 
+    sampleTransactions,
+    sampleRecurringExpenses
+} from "../data/sampleNorthLedgerData";
 import { clearAuthTokens } from "../utils/authStorage";
 import type { Account } from "../types/account";
 import type { Category } from "../types/category";
 import type { Transaction, TransactionType } from "../types/transaction";
 import type { Budget } from "../types/budget";
+import type { RecurringFrequency, RecurringExpense } from "../types/recurring";
 import type { AppPage } from "../types/page";
 import "../App.css";
 
@@ -27,7 +36,7 @@ const monthNames = [
 ];
 
 type TransactionFilter = "ALL" | TransactionType;
-type ActiveModal = null | "account" | "transaction" | "budget";
+type ActiveModal = null | "account" | "transaction" | "budget" | "recurring";
 
 function DashboardPage() {
 
@@ -39,16 +48,23 @@ function DashboardPage() {
     const [categories] = useState<Category[]>(sampleCategories);
     const [transactions, setTransactions] = useState<Transaction[]>(sampleTransactions);
     const [budgets, setBudgets] = useState<Budget[]>(sampleBudgets);
+    const [recurringExpenses, setRecurringExpenses] = useState<RecurringExpense[]>(sampleRecurringExpenses);
     const [transactionFilter, setTransactionFilter] = useState<TransactionFilter>("ALL");
     const [activeModal, setActiveModal] = useState<ActiveModal>(null);
     const [newAccountBankName, setNewAccountBankName] = useState<string>("");
     const [newAccountType, setNewAccountType] = useState<Account["accountType"]>("CHEQUING");
-    const [newTransactionType, setNewTransactionType] = useState<"DEBIT" | "CREDIT">("DEBIT");
+    const [newTransactionType, setNewTransactionType] = useState<TransactionType>("DEBIT");
     const [newTransactionAccountId, setNewTransactionAccountId] = useState<number>(accounts[0]?.id ?? 0);
     const [newTransactionAmount, setNewTransactionAmount] = useState<string>("");
     const [newTransactionDescription, setNewTransactionDescription] = useState<string>("");
     const [newTransactionDate, setNewTransactionDate] = useState<string>(new Date().toISOString().slice(0,10));
     const [newBudgetLimit, setNewBudgetLimit] = useState<string>("");
+    const [newRecurringDescription, setNewRecurringDescription] = useState<string>("");
+    const [newRecurringAmount, setNewRecurringAmount] = useState<string>("");
+    const [newRecurringFrequency, setNewRecurringFrequency] = useState<RecurringFrequency>("MONTHLY");
+    const [newRecurringDueDate, setNewRecurringDueDate] = useState<string>("");
+
+
 
 
     const expenseCategories = categories.filter((category) => {
@@ -78,6 +94,7 @@ function DashboardPage() {
 
         resetTransactionForm();
         resetBudgetForm();
+        resetRecurringForm();
     }
 
     function handleAddAccount(event: FormEvent<HTMLFormElement>){
@@ -294,6 +311,27 @@ function DashboardPage() {
         );
     }
 
+    function renderRecurringExpenseRow(expense: RecurringExpense) {
+
+        return(
+            <div className="row" key={expense.id}>
+
+                <div>
+                    <div className="row-title">
+                        {expense.description}
+                    </div>
+                    <div className="row-sub">
+                        {`${expense.frequency} · Due ${dateLabel(expense.dueDate)}`}
+                    </div>
+
+                </div>
+                <div className="row-amount">
+                    {money(expense.amount)}
+                </div>
+            </div>
+        )
+    }
+
     function spentForCategory(categoryId: number): number {
         return transactions
             .filter((transaction)=>{
@@ -398,6 +436,12 @@ function DashboardPage() {
 
     }
 
+    function resetRecurringForm(){
+        setNewRecurringDescription("");
+        setNewRecurringAmount("");
+        setNewRecurringFrequency("MONTHLY");
+        setNewRecurringDueDate("");
+    }
 
     function handleAddTransaction(event: FormEvent<HTMLFormElement>) {
 
@@ -467,7 +511,6 @@ function DashboardPage() {
             });
         });
 
-        resetTransactionForm();
         setTransactionFilter("ALL");
         closeModal();
     }
@@ -534,10 +577,62 @@ function DashboardPage() {
 
             return [...currentBudgets, newBudget];
 
+
+
         });
 
         closeModal();
     }
+
+    function handleAddRecurringExpense(event:FormEvent<HTMLFormElement>){
+
+        event.preventDefault();
+
+        const description = newRecurringDescription.trim();
+
+        const amount = Number(newRecurringAmount);
+
+        if(!description){
+
+            alert("Please enter a description");
+            return;
+        }
+
+        if(!Number.isFinite(amount) || amount <=0){
+
+            alert("Please enter valid amount");
+            return;
+        }
+
+        const dueDateIsValid = /^\d{4}-\d{2}-\d{2}$/.test(newRecurringDueDate) &&
+            !Number.isNaN(Date.parse(newRecurringDueDate));
+
+        if (!dueDateIsValid) {
+            alert("Please select a valid due date.");
+            return;
+        }
+
+        setRecurringExpenses((currentExpenses) =>{
+
+            const nextExpenseId = currentExpenses.length === 0 
+                ? 1 
+                : Math.max(...currentExpenses.map((expense)=>expense.id)) + 1;
+
+            const newExpense: RecurringExpense = {
+            
+                id:nextExpenseId,
+                description: description,
+                amount: amount,
+                frequency: newRecurringFrequency,
+                dueDate: newRecurringDueDate
+            };
+
+            return [...currentExpenses, newExpense];
+
+        });
+
+        closeModal();
+    }   
 
 
     const monthlyIncome = currentMonthlyIncome();
@@ -827,6 +922,44 @@ function DashboardPage() {
                         </div>
                     </section>
                 )}
+
+                {activePage === "recurring" && (
+                    <section className="page active">
+                        <div className="topbar">
+                            <div>
+                                <h1>Recurring Expenses</h1>
+                                <p className="subtitle">Keep track of upcoming bills</p>
+                            </div>
+                            <button className="btn primary" 
+                            onClick={() => {
+                                setActiveModal("recurring");
+                            }}>
+                                Add recurring expense
+                            </button>
+                        </div>
+
+                        <div className="panel">
+
+                            <div className="panel-header">
+                                <h2>Upcoming payments</h2>
+                            </div>
+
+                            <div className="rows">
+                                {recurringExpenses.length === 0 && (
+
+                                    <div className="helper">
+                                        No recurring expenses yet.
+                                    </div>
+                                )}
+                   
+                                {recurringExpenses.map(renderRecurringExpenseRow)}
+                  
+                            </div>
+                        </div>
+
+
+                    </section>
+                )}
             </main>
             {activeModal === "account" && (
 
@@ -907,27 +1040,33 @@ function DashboardPage() {
                                 id="transactionType"
                                 value={newTransactionType}
                                 onChange={(event) => {
-                                    const selectedType = event.target.value as "DEBIT" | "CREDIT";
+                                    const selectedType = event.target.value as TransactionType;
 
                                     setNewTransactionType(selectedType);
 
-                                    const firstMatchingCategory = categories.find((category) => {
+                                    if (selectedType !== "TRANSFER"){
 
-                                        if( selectedType === "DEBIT") {
+                                        const firstMatchingCategory = categories.find((category) => {
 
-                                            return category.categoryType === "EXPENSE";
-                                        }
+
+                                            if( selectedType === "DEBIT") {
+
+                                                return category.categoryType === "EXPENSE";
+                                            }
 
                                         return category.categoryType === "INCOME";
                                     });
-
+                                    
                                     if(firstMatchingCategory){
                                         setNewTransactionCategoryId(firstMatchingCategory.id);
                                     }
+
+                                }
+
                                 }}>
                                     <option value="DEBIT">Debit</option>
                                     <option value="CREDIT">Credit</option>
-                                    {/* <option value="TRANSFER">Transfer</option> */}
+                                    <option value="TRANSFER">Transfer</option>
                                 </select>
                             </div>
 
@@ -1047,7 +1186,9 @@ function DashboardPage() {
                                 <label htmlFor="limit">LIMIT</label>
                                 <input 
                                     type="number" 
-                                    id="limit" 
+                                    id="limit"
+                                    min="0.01"
+                                    step="0.01"
                                     value={newBudgetLimit}
                                     onChange={(event) => {
                                         setNewBudgetLimit(event.target.value)
@@ -1063,6 +1204,100 @@ function DashboardPage() {
 
                 </div>
                 
+            )}
+
+            {activeModal === "recurring" && (
+
+                <div className="modal-backdrop">
+                    <form className="modal" onSubmit={handleAddRecurringExpense}>
+                        <div className="modal-head">
+                            <h2>Add recurring expense</h2>
+                            <button type="button" 
+                            className="btn subtle" 
+                            onClick={closeModal}>×</button>
+                        </div>
+
+                        <div className="modal-body form-grid">
+                            <div className="form-group full">
+                                <label htmlFor="recurringDescription">Description</label>
+                                <input 
+                                    id="recurringDescription" 
+                                    type="text"
+                                    value={newRecurringDescription}
+                                    onChange={(event)=> {
+                                        setNewRecurringDescription(event.target.value);
+                                    }}
+                                    placeholder="e.g. Netflix subscription" 
+                                    autoFocus/>
+                            </div>
+
+                            <div className="form-group">
+
+                                <label htmlFor="recurringAmount">
+                                    Amount
+                                </label>
+                                
+                                <input 
+                                    type="number"
+                                    id="recurringAmount"
+                                    min="0.01"
+                                    step="0.01"
+                                    value={newRecurringAmount}
+                                    onChange={(event)=> {
+                                        setNewRecurringAmount(event.target.value);
+                                    }}
+                                    placeholder="0.00" />
+                            </div>
+
+                            <div className="form-group">
+                                <label htmlFor="recurringFrequency">
+                                    Frequency
+                                </label>
+
+                                <select id="recurringFrequency"
+                                    value={newRecurringFrequency}
+                                    onChange={(event)=>{
+                                        setNewRecurringFrequency(event.target.value as RecurringFrequency);
+                                    }}>
+                                    
+                                    <option value="WEEKLY">Weekly</option>
+                                    <option value="MONTHLY">Monthly</option>
+                                    <option value="YEARLY">Yearly</option>
+                                </select>
+                            </div>
+
+                            <div className="form-group">
+                                <label htmlFor="recurringDueDate">Next Due Date</label>
+                                <input
+                                    id="recurringDueDate" 
+                                    type="date"
+                                    value={newRecurringDueDate}
+                                    onChange={(event)=>{
+                                        setNewRecurringDueDate(event.target.value);
+                                    }} />
+                            </div>
+                        </div>
+
+                        <div className="modal-actions">
+                            
+                            <button 
+                                type="button"
+                                className="btn subtle"
+                                onClick={closeModal}>
+                                    Cancel
+                            </button>
+
+                            <button
+                                type="submit"
+                                className="btn primary">
+                                
+                                Save recurring expense
+                            </button>
+                        </div>
+
+                    </form>
+                </div>
+
             )}
         </div>
     );
