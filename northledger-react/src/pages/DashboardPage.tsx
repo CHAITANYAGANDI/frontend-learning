@@ -55,6 +55,8 @@ function DashboardPage() {
     const [newAccountType, setNewAccountType] = useState<Account["accountType"]>("CHEQUING");
     const [newTransactionType, setNewTransactionType] = useState<TransactionType>("DEBIT");
     const [newTransactionAccountId, setNewTransactionAccountId] = useState<number>(accounts[0]?.id ?? 0);
+    const [newTransferFromAccountId, setNewTransferFromAccountId] = useState<number>(accounts[0]?.id ?? 0);
+    const [newTransferToAccountId, setNewTransferToAccountId] = useState<number>(accounts[1]?.id ?? 0);
     const [newTransactionAmount, setNewTransactionAmount] = useState<string>("");
     const [newTransactionDescription, setNewTransactionDescription] = useState<string>("");
     const [newTransactionDate, setNewTransactionDate] = useState<string>(new Date().toISOString().slice(0,10));
@@ -423,6 +425,8 @@ function DashboardPage() {
 
         setNewTransactionType("DEBIT");
         setNewTransactionAccountId(accounts[0]?.id ?? 0);
+        setNewTransferFromAccountId(accounts[0]?.id ?? 0);
+        setNewTransferToAccountId(accounts[1]?.id ?? 0);
         setNewTransactionCategoryId(firstExpenseCategory?.id ?? 0);
         setNewTransactionAmount("");
         setNewTransactionDescription("");
@@ -450,6 +454,111 @@ function DashboardPage() {
         const amount = Number(newTransactionAmount);
         const trimmedDescription = newTransactionDescription.trim();
 
+
+
+        if(!Number.isFinite(amount) || amount <=0){
+
+            alert("Please enter a valid amount.");
+            return;
+        }
+
+        if(!trimmedDescription){
+
+            alert("Please enter a note.");
+            return;
+        }
+
+        if (newTransactionType === "TRANSFER"){
+
+            if(!newTransferFromAccountId || !newTransferToAccountId){
+
+                alert("Please select both accounts.");
+                return;
+            }
+
+            if(newTransferFromAccountId === newTransferToAccountId){
+
+                alert("You cannot transfer money to the same account.");
+                return;
+            }
+
+            const fromAccount = accounts.find((account) =>{
+
+                return account.id === newTransferFromAccountId;
+            });
+
+            const toAccount = accounts.find((account) => {
+
+                return account.id === newTransferToAccountId;
+            });
+
+            if(!fromAccount){
+
+                alert("Account not found.");
+                return;
+            }
+
+            if(fromAccount.balance < amount){
+
+                alert("Insufficient funds");
+                return;
+            }
+
+            if(!toAccount){
+
+                alert("Account not found");
+                return;
+            }
+
+            setAccounts((currentAccounts) => {
+
+                return currentAccounts.map((account) => {
+                    
+                    if(account.id === newTransferFromAccountId){
+
+                        return {
+                            ...account,
+                            balance: account.balance - amount
+                        };
+
+                    }
+
+                    if(account.id === newTransferToAccountId) {
+
+                        return {
+                            ...account,
+                            balance: account.balance + amount
+                        };
+                    }
+
+                    return account;
+                });
+            });
+
+
+            const transferTransaction: Transaction = {
+
+                id: Date.now(),
+                transactionType: "TRANSFER",
+                fromAccountId: newTransferFromAccountId,
+                toAccountId: newTransferToAccountId,
+                amount: amount,
+                description: trimmedDescription,
+                transactionDate: newTransactionDate
+            };
+
+
+            setTransactions((currentTransactions) => {
+
+                return [transferTransaction, ...currentTransactions];
+            });
+
+            setTransactionFilter("ALL");
+            closeModal();
+
+            return;
+        }
+
         if(!newTransactionAccountId){
 
             alert("Please select an account.");
@@ -459,18 +568,6 @@ function DashboardPage() {
         if(!newTransactionCategoryId) {
 
             alert("Please select a category.")
-            return;
-        }
-
-        if(Number.isNaN(amount) || amount <=0){
-
-            alert("Please enter a valid amount.");
-            return;
-        }
-
-        if(!trimmedDescription){
-
-            alert("Please enter a note.");
             return;
         }
 
@@ -1070,20 +1167,74 @@ function DashboardPage() {
                                 </select>
                             </div>
 
-                            <div className="form-group">
-                                <label htmlFor="account">ACCOUNT</label>
-                                <select id="account"
-                                value={newTransactionAccountId}
-                                onChange={(event) => {
-                                    setNewTransactionAccountId(Number(event.target.value))
-                                }}>{accounts.map((account)=>{
+                            {newTransactionType!== "TRANSFER" && (
 
-                                    return (
-                                        <option key = {account.id} value={account.id}>{getAccountName(account.id)}</option>
-                                    )
-                                })}</select>
+                                <div className="form-group">
+                                    <label htmlFor="account">ACCOUNT</label>
+                                    <select id="account"
+                                    value={newTransactionAccountId}
+                                    onChange={(event) => {
+                                        setNewTransactionAccountId(Number(event.target.value))
+                                    }}>{accounts.map((account)=>{
 
-                            </div>
+                                        return (
+                                            <option key = {account.id} value={account.id}>{getAccountName(account.id)}</option>
+                                        )
+                                    })}</select>
+
+                                </div>
+                            )}
+
+                            {newTransactionType === "TRANSFER" && (
+                                
+                                <div className="form-group">
+                                    <label htmlFor="transferFromAccount">
+                                        FROM ACCOUNT
+                                    </label>
+                                    
+                                    <select 
+                                        id="transferFromAccount"
+                                        value={newTransferFromAccountId}
+                                        onChange={(event)=>{
+                                            setNewTransferFromAccountId(Number(event.target.value))
+                                        }}
+                                    >
+                                        {accounts.map((account) => {
+
+                                            return (
+                                                <option 
+                                                    key={account.id}
+                                                    value={account.id}>
+                                                    {getAccountName(account.id)}
+                                                </option>
+                                            )
+                                        })}
+                                    </select>
+                                </div>
+                                
+                            )}
+
+                            {newTransactionType === "TRANSFER" && (
+
+                                <div className="form-group">
+                                    <label htmlFor="transferToAccount">TO ACCOUNT</label>
+
+                                    <select id="transferToAccount" value={newTransferToAccountId}
+                                    onChange={(event)=>{
+                                        setNewTransferToAccountId(Number(event.target.value))
+                                    }}>
+
+                                        {accounts.map((account) =>{
+                                            return(
+                                                <option key={account.id} value={account.id}>
+                                                    {getAccountName(account.id)}
+                                                </option>
+                                            )
+                                        })}
+                                    </select>
+
+                                </div>
+                            )}
 
                             <div className="form-group">
                                 <label htmlFor="amount">AMOUNT</label>
@@ -1097,21 +1248,26 @@ function DashboardPage() {
                                 />
                             </div>
 
-                            <div className="form-group">
-                                <label htmlFor="category">CATEGORY</label>
-                                <select id="category"
-                                value={newTransactionCategoryId}
-                                onChange={(event) => {
-                                    setNewTransactionCategoryId(Number(event.target.value))
-                                }}>{availableTransactionCategories
-                                        .map((category) => {
-                                            return(
-                                                <option 
-                                                key = {category.id} 
-                                                value={category.id}>{category.categoryName}</option>
-                                            );
-                                        })}</select>
-                            </div>
+                            {newTransactionType !== "TRANSFER" && (
+                                
+                                <div className="form-group">
+                                    <label htmlFor="category">CATEGORY</label>
+                                    <select id="category"
+                                    value={newTransactionCategoryId}
+                                    onChange={(event) => {
+                                        setNewTransactionCategoryId(Number(event.target.value))
+                                    }}>{availableTransactionCategories
+                                            .map((category) => {
+                                                return(
+                                                    <option 
+                                                    key = {category.id} 
+                                                    value={category.id}>{category.categoryName}</option>
+                                                );
+                                    })}</select>
+                                </div>
+                            )}
+
+                            
 
                             <div className="form-group">
                                 <label htmlFor="date">DATE</label>
