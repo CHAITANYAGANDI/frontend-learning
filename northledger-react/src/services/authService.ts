@@ -1,5 +1,5 @@
-import type { LoginRequest, LoginResponse } from "../types/auth";
-import { LOGIN_URL } from "../constants/api";
+import type { LoginRequest, LoginResponse, RegisterRequest, RegisterResponse } from "../types/auth";
+import { LOGIN_URL,REGISTER_URL } from "../constants/api";
 
 export async function loginUser(loginRequest: LoginRequest): Promise<LoginResponse> {
 
@@ -23,4 +23,30 @@ export async function loginUser(loginRequest: LoginRequest): Promise<LoginRespon
           const loginResponse: LoginResponse = await response.json();
 
           return loginResponse;
+}
+
+
+export async function registerUser(registerRequest: RegisterRequest): Promise<RegisterResponse>{
+
+
+  const registerRequestJson = JSON.stringify(registerRequest);
+
+  const response = await fetch(REGISTER_URL, {
+    method: "POST",
+    headers: {
+      "Content-Type":"application/json"
+    },
+    body:registerRequestJson
+  });
+
+
+  if(!response.ok){
+
+    throw new Error("Unable to register");
+  }
+
+  const registerResponse: RegisterResponse = await response.json();
+
+  return registerResponse;
+
 }
