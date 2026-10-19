@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import "../App.css";
 import type { LoginRequest } from "../types/auth";
 import { loginUser } from "../services/authService";
@@ -113,6 +113,10 @@ function LoginPage(){
         </form>
 
         <p>{message}</p>
+
+        <p>
+          Already have an account? <Link to="/">Log in</Link>
+        </p>
 
       </div>
     </div>
